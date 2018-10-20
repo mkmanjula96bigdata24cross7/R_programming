@@ -1,0 +1,101 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r}
+head(cars)
+```
+
+
+```{r}
+scatter.smooth(x=cars$speed,y=cars$dist,main="Dist~speed")
+```
+```{r}
+#outlier 
+#dividing the graph into 2 columns
+par(mfrow=c(1,2))
+boxplot(cars$speed, main="Speed", sub=paste("outlier rows:",boxplot.stats(cars$speed)$out))
+boxplot(cars$dist,main="distance",sub=paste("outlier rows:",boxplot.stats(cars$dist)$out))
+```
+
+```{r}
+library(e1071)
+par(mfrow=c(1,2))
+#density plot
+plot(density(cars$speed),main="Density plot:Speed",ylab="Frequency",sub=paste("Skewness:",round(e1071::skewness(cars$speed),2)))
+plot(density(cars$dist),main="Density plot:Distance",ylab="frequency",sub=paste("skewness:",round(e1071::skewness(cars$dist))))
+polygon(density(cars$dist),col="green")
+#polygon(density(cars$speed),col="red")
+```
+
+```{r}
+#to find correlation between variable
+cor(cars$speed,cars$dist)
+```
+
+```{r}
+#build linear model
+model<-lm(dist~speed,data=cars)
+print(model)
+summary(model)
+```
+
+```{r}
+#calculating t-statistics and p-value
+modelsummary<-summary(model)
+modelcoeff<-modelsummary$coefficients
+beta.estimate<-modelcoeff["speed","Estimate"]
+std.err<-modelcoeff["speed","Std. Error"]
+tvalue<-beta.estimate/std.err#gives t value
+#calculate p-value
+pvalue<-2*pt(-abs(tvalue),df=nrow(cars)-ncol(cars))
+f_stat<-model$fstatistic[1]
+f<-summary(model)$fstatistic
+model_p<-pf(f[1],f[2],f[3],lower=FALSE)
+print(paste("t-value",tvalue))
+print(paste("p-value",pvalue))
+
+print(paste("model F-statistic",f_stat))
+print(paste("model p value",model_p))
+
+```
+
+```{r}
+#predicting linear models
+#creating training test datasamples
+set.seed(100)#setting seed to reproduce the result of random sampling
+trainrow<-sample(1:nrow(cars),0.8*nrow(cars))
+traindata<-cars[trainrow,]#model training data
+testdata<-cars[-trainrow,]
+```
+
+```{r}
+linearmodel<-lm(dist~speed,data=traindata)
+distpred<-predict(linearmodel,testdata)
+```
+
+```{r}
+summary(linearmodel)
+AIC(linearmodel)
+BIC(linearmodel)
+```
+
+```{r}
+#calculate prediction accuracy
+actuals_preds<-data.frame(cbind(actuals=testdata$dist,predicteds=distpred))
+head(actuals_preds)
+
+```
+
+```{r}
+#correlation accuracy
+corr_acc<-cor(actuals_preds)
+print(corr_acc)
+```
+
+```{r}
+
+```
+
